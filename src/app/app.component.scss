@@ -31,4 +31,10 @@
 
 .main {
     grid-area: B;
+    padding: 2rem;
+}
+
+
+ag-grid-angular {
+    width: 100% !important;     // seems to be required
 }
