@@ -7,6 +7,5 @@
 			"path": "src/app"
 		}
 	],
-	"remoteAuthority": "wsl+Ubuntu-20.04",
 	"settings": {}
 }

@@ -1,0 +1,14 @@
+
+
+
+<ag-grid-angular
+  class="ag-theme-balham"
+  [rowData]="rowData"
+  [columnDefs]="columnDefs"
+  [gridOptions]="gridOptions"
+  [enableRangeSelection]="true"
+  [suppressMovableColumns]="true"
+  (gridReady)="onGridReady($event)"
+  (cellFocused)="cellGotFocus($event)"
+  (cellValueChanged)="cellValueChanged($event)">
+</ag-grid-angular>
