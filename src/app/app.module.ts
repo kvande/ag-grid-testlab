@@ -4,7 +4,6 @@ import { AppComponent } from './app.component';
 import { AgGridModule } from 'ag-grid-angular';
 import { TableComponent } from './table/table.component';
 
-
 @NgModule({
   declarations: [
     AppComponent,

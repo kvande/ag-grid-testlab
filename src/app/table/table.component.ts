@@ -5,6 +5,10 @@ import { TimeSeries, TimeSeriesIdentifier, TimeSeriesWithData, ViewWithTimeSerie
 import fromUnixTime from 'date-fns/fromUnixTime';
 import './table-data';
 import { tableData$ } from './table-data';
+import { ColumnApi, GridApi, GridOptions } from 'ag-grid-community';
+import { cellFocused } from './table-events';
+
+
 
 interface RowData {
     [key: string]: string | number;
@@ -36,6 +40,11 @@ interface ViewInputParameters {
 })
 export class TableComponent implements OnInit {
 
+    /*      
+        ak 04.03.2021: Motivation, only using ag-grid GridOptions instead of binding in the template since,
+                        - some are not exposed to Angular, so have to mix anyway
+                        - typing and intellisense is much better in Typescript compared to the template
+    */ 
 
     @Input()
     public inputParameters: ViewInputParameters;
@@ -43,18 +52,23 @@ export class TableComponent implements OnInit {
     
     public columnDefs: Array<ColumnDefinition>;
 
-    public gridOptions: any;
-    private agGridApi: any;     // everything from here should be availalbe, it seems: https://www.ag-grid.com/javascript-grid-api/
+    public gridOptions: GridOptions;
+    
+        // everything from here should be availalbe, it seems: https://www.ag-grid.com/javascript-grid-api/
+    private agGridApi: GridApi; 
+    private columnApi: ColumnApi;
 
-    public rowData: Array<RowData>;                // TODO: make observable
+
+    public rowData: Array<RowData>;
     private firstColumnTag = 'series-name';
     private rowIndexForTimeSeries: Array<[number, TimeSeriesIdentifier]>;
 
     private subscription: Subscription;
 
-    private myData$;
 
-    // constructor() { }
+    constructor() {
+        this.gridOptions = this.initGridOptions();
+    }
 
     public ngOnInit() {
 
@@ -63,34 +77,74 @@ export class TableComponent implements OnInit {
         ).subscribe((timeSeries: Array<TimeSeriesWithData<number>>) => {
 
 
-                console.log('here');
+                // console.log('here');
 
 
                 // todo, just a naive approach regarding adding series. A better way should be established later
                 if (!this.columnDefs) this.columnDefs = this.createColumnDefs(timeSeries);
                 this.rowData = this.createRowData(timeSeries);
+
+                // console.log(this.rowData)
             });
 
     }
 
-    public data$ = (): Observable<Array<ViewWithTimeSeries>> => tableData$();
+    public data$ = (): Observable<Array<TimeSeriesWithData<number>>> => tableData$();
 
     public ngOnDestroy() {
         this.subscription?.unsubscribe();
     }
+
+    private initGridOptions = (): GridOptions => {
+
+        return {
+            suppressPropertyNamesCheck: true,
+            onCellFocused: cellFocused,
+            onGridReady: ({api, columnApi}) => {
+                this.agGridApi = api;
+                this.columnApi = columnApi;
+            }
+        };
+
+        // {
+        //     suppressPropertyNamesCheck: true,
+        //     onCellValueChanged: () => {
+        //         console.log('it was changed');
+                
+        //     },
+        //     getRowNodeId: (i: any) => {
+        //         console.log('here er vi');
+                
+        //         return 'ping';
+        //     }
+    }
+
+
+
 
     public onGridReady = (params: any) => {
         this.agGridApi = params.api;
         // this.agGridColumnApi = params.columnApi;  // will this be needed at some stage? Keep it here as a reminder for later use
     }
 
-    public cellGotFocus = (event: any) => {
+    public cellGotFocusCallback = (event: any) => {
         if (event && event.column) {
             // console.log('Row is ', event.rowIndex, ' -- col is ', event.column.colId);
         }
     }
 
+    public getRowNodeIdCallback(event: any) {
+        console.log('*******************************', event);
+
+        return 123456789;
+        
+    }
+
+
     public cellValueChanged(event: { rowIndex: number, oldValue: number, newValue: number, colDef: ColumnDefinition, data: any }) {
+
+        console.log('*** cellValueChanged ***');
+        
 
         if (event.newValue === event.oldValue) return;    // might happen if just tabbing in and out of cells
 
@@ -137,7 +191,7 @@ export class TableComponent implements OnInit {
             return ({
                 headerName: this.dateToString(dateUnix),
                 field: `${dateUnix}`,
-                width: 60,
+                width: 70,
                 date: dateUnix,
                 editable: true,
                 valueParser: this.numberParser
@@ -162,8 +216,7 @@ export class TableComponent implements OnInit {
     private createRowDataForSeries = (series: TimeSeriesWithData<number>) => {
         const rowData: RowData = {};
 
-        rowData[this.firstColumnTag] = this.getDisplayName(this.inputParameters.timeSeries, series);
-
+        rowData[this.firstColumnTag] = series.attributeId;
         series.data.forEach(([d, v]) => { rowData[`${d}`] = v; });
         return rowData;
     }
@@ -179,14 +232,4 @@ export class TableComponent implements OnInit {
 
         return hour === 0 ? `${convert(date.getDate())}-${convert(date.getMonth() + 1)}` : `${hour}:00`;
     }
-    
-
-    private getDisplayName(all: Array<TimeSeriesIdentifier>, series: TimeSeries): string {
-
-        return 'jalla'
-        
-        // const match = all?.find(i => TimeSeriesUtil.sameSeries(i, series));
-        // return match?.displayName ?? (series?.id?.toString() ?? '');
-    }
-
 }

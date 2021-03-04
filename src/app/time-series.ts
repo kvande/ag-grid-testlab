@@ -1,5 +1,4 @@
 
-
 export enum ComponentType {
     undefined,
     powerPlant,
