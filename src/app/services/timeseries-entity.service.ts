@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { TimeSeriesWithData } from '../time-series';
+import { TimeSeriesWithData, ViewWithTimeSeries } from '../time-series';
 import { tableData$ } from '../table/table-data';
 
 @Injectable({
@@ -8,10 +8,10 @@ import { tableData$ } from '../table/table-data';
 })
 export class TimeSeriesEntityService {
 
-    public entities$: Observable<Array<TimeSeriesWithData<number>>> = tableData$();
+    public entities$: Observable<Array<ViewWithTimeSeries>> = tableData$();
 
 
     public update = (change: any) =>  console.log('Should update', change);
 
-    
+
 }

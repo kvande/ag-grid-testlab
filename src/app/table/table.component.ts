@@ -6,9 +6,10 @@ import fromUnixTime from 'date-fns/fromUnixTime';
 import { CellValueChangedEvent, ColumnApi, GridApi, GridOptions } from 'ag-grid-community';
 import { cellFocused, cellValueChanged } from './table-events';
 import { getRowNodeId } from './table-callbacks';
-import { createTimeSeriesIdentifier, getDisplayName } from '../utils/chart-table-utils';
+import { changedSeriesForView, createTimeSeriesIdentifier, getDisplayName } from '../utils/chart-table-utils';
 import { TimeSeriesEntityService } from '../services/timeseries-entity.service';
 import { ViewInputParameters } from '../app.component';
+
 
 interface RowData {
     [key: string]: string | number;
@@ -54,6 +55,8 @@ export class TableComponent implements OnInit {
     private subscription: Subscription;
     private gridReady$ = new Subject<boolean>();        // must wait for the grid to be ready before setting values
 
+    private previousPayloadDates = new Array<[TimeSeriesIdentifier, number]>();
+    
 
     constructor(private timeSeriesEntityService: TimeSeriesEntityService) {}
 
@@ -63,6 +66,8 @@ export class TableComponent implements OnInit {
 
         this.subscription = combineLatest([this.gridReady$, this.timeSeriesEntityService.entities$]).pipe(
             map(([_, j]) => j),
+            filter((i: []) => i.length > 0),
+            changedSeriesForView(this.inputParameters.viewId, this.previousPayloadDates),
             filter((i: []) => i.length > 0),
         ).subscribe((timeSeries: Array<TimeSeriesWithData<number>>) => {
 
@@ -81,7 +86,7 @@ export class TableComponent implements OnInit {
             suppressPropertyNamesCheck: true,
             onCellFocused: cellFocused,
             getRowNodeId: i => getRowNodeId(i, this.firstColumnTag),
-            onCellValueChanged: this.cellValueChanged,
+            onCellValueChanged: i => this.cellValueChanged(i),
             onGridReady: ({api, columnApi}) => {
                 this.gridApi = api;
                 this.columnApi = columnApi;
@@ -103,6 +108,9 @@ export class TableComponent implements OnInit {
             editable: false,
             pinned: 'left',
         };
+
+        console.log(series);
+        
 
         const timeSteps: Array<ColumnDefinition> = Array.from(series[0].data).map(([dateUnix, _]) => {
             return ({
@@ -142,7 +150,7 @@ export class TableComponent implements OnInit {
             addIndex: addIndex,
         });
 
-        console.log(res);    
+        // console.log(res);    
     }
 
     private createRowData = (series: Array<TimeSeriesWithData<number>>, updateRowIndex: boolean): Array<RowData> => {
@@ -162,7 +170,7 @@ export class TableComponent implements OnInit {
     private createRowDataForSeries = (series: TimeSeriesWithData<number>) => {
         const rowData: RowData = {};
 
-        rowData[this.firstColumnTag] = getDisplayName([], series); //   series.attributeId;
+        rowData[this.firstColumnTag] = getDisplayName(this.inputParameters.timeSeries, series);
         series.data.forEach(([d, v]) => { rowData[`${d}`] = v; });
         return rowData;
     }

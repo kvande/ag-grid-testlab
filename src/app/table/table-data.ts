@@ -1,31 +1,31 @@
-import { interval, Observable, of } from "rxjs";
+import { interval, Observable } from "rxjs";
 import { TimeSeriesWithData, ViewWithTimeSeries } from "../time-series";
 import { addHours } from 'date-fns';
 import { map, take } from "rxjs/operators";
 
-export const tableData$ = ():  Observable<Array<TimeSeriesWithData<number>>> => {
+export const tableData$ = ():  Observable<Array<ViewWithTimeSeries>> => {
 
-    return interval(50).pipe(
+    return interval(100).pipe(
         take(12),
         map(j => {
             
-            const series = [];
+            const timeSeries = new Array<TimeSeriesWithData<number>>();
 
             for (let i = j; i < 5 + j; i++) {
-                series.push(createTs(`Series ${i}`, j))
+                timeSeries.push(createTs(`Series ${i}`, j))
             }
+            return [{
+                viewId: 1,
+                requestId: 'some kind of request id',
+                timeSeries
 
-
-            return series;
+            } as ViewWithTimeSeries];
         })
     )
 }
 
 
 const createTs = (name: string, firstValue: number): TimeSeriesWithData<number> => {
-
-
-    console.log(firstValue);
 
     const firstTimeStep = new Date(2021, 1, 29, 11, 0, 0);
 
@@ -40,6 +40,6 @@ const createTs = (name: string, firstValue: number): TimeSeriesWithData<number> 
         hpsId: 1,
         data,
         id: 1,
-        payloadDate: 1
+        payloadDate: Date.now(),
     };
 }
