@@ -1,8 +1,9 @@
 
-import { GridOptions } from 'ag-grid-community';
+import { CellFocusedEvent, GridOptions } from 'ag-grid-community';
 
-export const cellFocused = (event: any) => {
+export const cellFocused = (event: CellFocusedEvent) => {
 
-    console.log(event);
+    console.log('*** cellValueChanged ***');
+    console.log(event.rowIndex);
     
 }

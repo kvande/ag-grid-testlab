@@ -3,7 +3,9 @@
 
 ### To avoid having to figure this stuff out every time, this readme was created  
 
-!! IF using Angular template bindings !!
+!! IF using Angular template bindings !!  
+It might be (much) better to just use the GridOptions directly from code.
+
 
 The Grid options is a vital part
 https://www.ag-grid.com/documentation/angular/grid-properties/

@@ -1,8 +1,5 @@
 
 import { GridOptions } from 'ag-grid-community';
 
-export const cellChanged = (event: any) => {
-
-    console.log(event);
-    
-}
+// data is not types in ag-grid
+export const getRowNodeId = (data: any, colId: string): string => data[colId];
