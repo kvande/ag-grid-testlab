@@ -45,8 +45,7 @@ export class TableComponent implements OnInit {
     public columnDefs: Array<ColumnDefinition>;
     public gridOptions: GridOptions;
     
-        // everything from here should be availalbe, it seems: https://www.ag-grid.com/javascript-grid-api/
-    private gridApi: GridApi; 
+    private gridApi: GridApi;           // https://www.ag-grid.com/javascript-grid-api/
     private columnApi: ColumnApi;
 
     private firstColumnTag = 'SeriesName';
@@ -84,6 +83,7 @@ export class TableComponent implements OnInit {
 
         return {
             suppressPropertyNamesCheck: true,
+            enableCellTextSelection: true,
             onCellFocused: cellFocused,
             getRowNodeId: i => getRowNodeId(i, this.firstColumnTag),
             onCellValueChanged: i => this.cellValueChanged(i),
