@@ -1,13 +1,14 @@
 import { Component, Input, OnInit } from '@angular/core';
 import {  combineLatest, Subject, Subscription } from 'rxjs';
-import { filter, map, tap  } from 'rxjs/operators';
+import { filter, map, tap } from 'rxjs/operators';
 import { TimeSeriesIdentifier, TimeSeriesUtil, TimeSeriesWithData, ComponentType, ViewWithTimeSeries } from '../time-series';
 import fromUnixTime from 'date-fns/fromUnixTime';
-import { ColumnApi, GridApi, GridOptions } from 'ag-grid-community';
-import { cellFocused } from './table-events';
+import { CellValueChangedEvent, ColumnApi, GridApi, GridOptions } from 'ag-grid-community';
+import { cellFocused, cellValueChanged } from './table-events';
 import { getRowNodeId } from './table-callbacks';
 import { createTimeSeriesIdentifier, getDisplayName } from '../utils/chart-table-utils';
 import { TimeSeriesEntityService } from '../services/timeseries-entity.service';
+import { ViewInputParameters } from '../app.component';
 
 interface RowData {
     [key: string]: string | number;
@@ -24,18 +25,10 @@ interface ColumnDefinition {
     pinned?: 'left' | 'right';
 }
 
-interface ViewInputParameters {
-    viewId: number;
-    title: string;
-    style: string;
-    timeSeries?: Array<TimeSeriesIdentifier>;
-}
-
-
 @Component({
     selector: 'app-table',
     templateUrl: './table.component.html',
-    styleUrls: ['./table.component.scss']
+    styleUrls: ['./table.component.scss'],
 })
 export class TableComponent implements OnInit {
 
@@ -48,17 +41,13 @@ export class TableComponent implements OnInit {
     @Input()
     public inputParameters: ViewInputParameters;
 
-    
     public columnDefs: Array<ColumnDefinition>;
-
     public gridOptions: GridOptions;
     
         // everything from here should be availalbe, it seems: https://www.ag-grid.com/javascript-grid-api/
     private gridApi: GridApi; 
     private columnApi: ColumnApi;
 
-
-    public rowData: Array<RowData>;
     private firstColumnTag = 'SeriesName';
     private rowIndexForTimeSeries: Array<[number, TimeSeriesIdentifier]>;
 
@@ -92,6 +81,7 @@ export class TableComponent implements OnInit {
             suppressPropertyNamesCheck: true,
             onCellFocused: cellFocused,
             getRowNodeId: i => getRowNodeId(i, this.firstColumnTag),
+            onCellValueChanged: this.cellValueChanged,
             onGridReady: ({api, columnApi}) => {
                 this.gridApi = api;
                 this.columnApi = columnApi;
@@ -100,36 +90,8 @@ export class TableComponent implements OnInit {
         };
     }
     
-    public cellValueChanged(event: { rowIndex: number, oldValue: number, newValue: number, colDef: ColumnDefinition, data: any}) {
-
-        if (event.newValue === event.oldValue) return;    // might happen if just tabbing in and out of cells
-    
-        
-        console.log('New value:', event.newValue, ' || old value:', event.oldValue);
-        
-
-        const match = this.rowIndexForTimeSeries.find(i => i[0] === event.rowIndex);
-        const { modelKey = '', hpsId = 0, componentId = 0, componentType = ComponentType.undefined, attributeId = '' } = match ? match[1] : { };
-
-        if (hpsId === 0) return;
-
-        const change: ViewWithTimeSeries = {
-            viewId: this.inputParameters.viewId,
-            timeSeries: [
-                    {
-                        id: TimeSeriesUtil.createId(hpsId, componentId, componentType, attributeId),
-                        modelKey,
-                        hpsId,
-                        componentId,
-                        componentType,
-                        attributeId,
-                        data: [[event.colDef.date, event.newValue]],
-                        payloadDate: Date.now()
-                    }
-            ]
-        };
-
-        this.timeSeriesEntityService.update(change);
+    public cellValueChanged(event: CellValueChangedEvent) {
+        cellValueChanged(event, this.inputParameters.viewId, this.rowIndexForTimeSeries, this.timeSeriesEntityService)
     }
 
     private createColumnDefs = (series: Array<TimeSeriesWithData<number>>): Array<ColumnDefinition> => {
@@ -155,7 +117,6 @@ export class TableComponent implements OnInit {
 
         return [firstColumn, ...timeSteps];
     }
-
 
     private addWithTransaction = (timeSeries: Array<TimeSeriesWithData<number>>) => {
 
@@ -193,10 +154,9 @@ export class TableComponent implements OnInit {
     
             series.map((i, index) => { this.rowIndexForTimeSeries.push([startIndex + index, createTimeSeriesIdentifier(i)]) });
         }
-        
 
         // TOOD; for now the order requested by the user is not taken into account. 
-        return [...this.rowData ?? [], ...series.map(s => this.createRowDataForSeries(s))]   ;
+        return series.map(s => this.createRowDataForSeries(s));
     }
 
     private createRowDataForSeries = (series: TimeSeriesWithData<number>) => {

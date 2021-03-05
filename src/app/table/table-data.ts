@@ -5,7 +5,7 @@ import { map, take } from "rxjs/operators";
 
 export const tableData$ = ():  Observable<Array<TimeSeriesWithData<number>>> => {
 
-    return interval(1000).pipe(
+    return interval(50).pipe(
         take(12),
         map(j => {
             
