@@ -1,14 +1,13 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { Observable, combineLatest, Subject, Subscription } from 'rxjs';
+import {  combineLatest, Subject, Subscription } from 'rxjs';
 import { filter, map, tap  } from 'rxjs/operators';
-import { TimeSeriesIdentifier, TimeSeriesUtil, TimeSeriesWithData } from '../time-series';
+import { TimeSeriesIdentifier, TimeSeriesUtil, TimeSeriesWithData, ComponentType, ViewWithTimeSeries } from '../time-series';
 import fromUnixTime from 'date-fns/fromUnixTime';
-import { tableData$ } from './table-data';
 import { ColumnApi, GridApi, GridOptions } from 'ag-grid-community';
 import { cellFocused } from './table-events';
 import { getRowNodeId } from './table-callbacks';
 import { createTimeSeriesIdentifier, getDisplayName } from '../utils/chart-table-utils';
-
+import { TimeSeriesEntityService } from '../services/timeseries-entity.service';
 
 interface RowData {
     [key: string]: string | number;
@@ -67,28 +66,21 @@ export class TableComponent implements OnInit {
     private gridReady$ = new Subject<boolean>();        // must wait for the grid to be ready before setting values
 
 
-    constructor() {
-        
-    }
+    constructor(private timeSeriesEntityService: TimeSeriesEntityService) {}
 
     public ngOnInit() {
 
         this.gridOptions = this.initGridOptions();
 
-        this.subscription = combineLatest([this.gridReady$, this.data$()]).pipe(
+        this.subscription = combineLatest([this.gridReady$, this.timeSeriesEntityService.entities$]).pipe(
             map(([_, j]) => j),
             filter((i: []) => i.length > 0),
         ).subscribe((timeSeries: Array<TimeSeriesWithData<number>>) => {
 
             if (!this.columnDefs) this.columnDefs = this.createColumnDefs(timeSeries);
-            // this.rowData = this.createRowData(timeSeries);
-
             this.addWithTransaction(timeSeries);
-
         });
     }
-
-    public data$ = (): Observable<Array<TimeSeriesWithData<number>>> => tableData$();
 
     public ngOnDestroy() {
         this.subscription?.unsubscribe();
@@ -113,31 +105,31 @@ export class TableComponent implements OnInit {
         if (event.newValue === event.oldValue) return;    // might happen if just tabbing in and out of cells
     
         
-        // console.log('New value:', event.newValue, ' || old value:', event.oldValue);
+        console.log('New value:', event.newValue, ' || old value:', event.oldValue);
         
 
-        // const match = this.rowIndexForTimeSeries.find(i => i[0] === event.rowIndex);
-        // const { modelKey = '', hpsId = 0, componentId = 0, componentType = ComponentType.undefined, attributeId = '' } = match ? match[1] : { };
+        const match = this.rowIndexForTimeSeries.find(i => i[0] === event.rowIndex);
+        const { modelKey = '', hpsId = 0, componentId = 0, componentType = ComponentType.undefined, attributeId = '' } = match ? match[1] : { };
 
-        // if (hpsId === 0) return;
+        if (hpsId === 0) return;
 
-        // const change: ViewWithTimeSeries = {
-        //     viewId: this.inputParameters.viewId,
-        //     timeSeries: [
-        //             {
-        //                 id: TimeSeriesUtil.createId(hpsId, componentId, componentType, attributeId),
-        //                 modelKey,
-        //                 hpsId,
-        //                 componentId,
-        //                 componentType,
-        //                 attributeId,
-        //                 data: [[event.colDef.date, event.newValue]],
-        //                 payloadDate: Date.now()
-        //             }
-        //     ]
-        // };
+        const change: ViewWithTimeSeries = {
+            viewId: this.inputParameters.viewId,
+            timeSeries: [
+                    {
+                        id: TimeSeriesUtil.createId(hpsId, componentId, componentType, attributeId),
+                        modelKey,
+                        hpsId,
+                        componentId,
+                        componentType,
+                        attributeId,
+                        data: [[event.colDef.date, event.newValue]],
+                        payloadDate: Date.now()
+                    }
+            ]
+        };
 
-        // this.timeSeriesEntityService.update(change);
+        this.timeSeriesEntityService.update(change);
     }
 
     private createColumnDefs = (series: Array<TimeSeriesWithData<number>>): Array<ColumnDefinition> => {
