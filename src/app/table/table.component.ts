@@ -109,9 +109,6 @@ export class TableComponent implements OnInit {
             pinned: 'left',
         };
 
-        console.log(series);
-        
-
         const timeSteps: Array<ColumnDefinition> = Array.from(series[0].data).map(([dateUnix, _]) => {
             return ({
                 headerName: this.dateToString(dateUnix),
