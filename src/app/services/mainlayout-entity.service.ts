@@ -1,15 +1,52 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
+import { ContentPresenterWithSeries } from '../api-converters/time-series/request/dstm-series-request-converter';
 import { MainLayout } from '../model/layout';
-// import { TimeSeriesWithData, ViewWithTimeSeries } from '../time-series';
-// import { tableData$ } from '../table-data/table-data';
+import { TimeSeriesIdentifier } from '../model/timeseries';
 
+const createTestData = (): MainLayout => {
+
+    const timeSeries: Array<TimeSeriesIdentifier> = [...Array(20).keys()].map(i => {
+
+      i = i + 1;
+
+      return ({
+        modelIdentifier: { modelKey: `${i}`,
+                          attributeId: `${i}`,
+                          componentId: i,
+                          componentType: i,
+                          hpsId: i
+                        },
+        displayAttributes: { displayName: `${i}`,
+                             objectName: `${i}`,
+                             case: '1'
+                          }
+    })});
+
+    return {
+        id: 1,
+        name: '',
+        content: [
+            {
+                id: 1,
+                presenter: 'table',
+                title: 'Test table',
+                position: {
+                    rowStart: 1,
+                    rowEnd: 2,
+                    columnStart: 1,
+                    columnEnd: 2,
+                },
+                timeSeries,
+            } as ContentPresenterWithSeries,
+        ],
+        payloadDate: 1,
+    };
+};
 
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class MainLayoutEntityService {
-
-    public entities$: Observable<Array<MainLayout>> = of(undefined);
-
+    public entities$: Observable<Array<MainLayout>> = of([createTestData()]);
 }

@@ -6,14 +6,14 @@ import { ViewWithTimeSeries } from "../services/time-series-entity/time-series-d
 
 export const tableData$ = (): Observable<Array<ViewWithTimeSeries>> => {
 
-    return interval(100).pipe(
-        take(12),
+    return interval(400).pipe(
+        take(80),
         map(j => {
-            
+
             const timeSeries = new Array<TimeSeriesWithData<number>>();
 
             for (let i = j; i < 5 + j; i++) {
-                timeSeries.push(createTs(`Series ${i}`, j))
+                timeSeries.push(createTs(i + 1, j))
             }
             return [{
                 viewId: 1,
@@ -25,22 +25,21 @@ export const tableData$ = (): Observable<Array<ViewWithTimeSeries>> => {
     )
 }
 
-
-const createTs = (name: string, firstValue: number): TimeSeriesWithData<number> => {
+const createTs = (id: number, firstValue: number): TimeSeriesWithData<number> => {
 
     const firstTimeStep = new Date(2021, 1, 29, 11, 0, 0);
 
-    const data: Array<[number, number]> = [...Array(8).keys()].map(i => {
+    const data: Array<[number, number]> = [...Array(40).keys()].map(i => {
         return [addHours(firstTimeStep, i).getTime() / 1000, firstValue];
     });
 
     return {
         modelIdentifier: {
-            attributeId: '1',
-            componentId: 1,
-            componentType: 1,
-            hpsId: 1,
-            modelKey: 'key'
+            attributeId: `${id}`,
+            componentId: id,
+            componentType: id,
+            hpsId: id,
+            modelKey: `${id}`
         },
         data,
         id: 1,

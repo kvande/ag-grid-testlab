@@ -49,20 +49,20 @@ interface ColumnDefinition {
 })
 export class TableDataComponent implements OnInit, OnDestroy {
 
-    /*      
+    /*
         ak 04.03.2021: Motivation, only using ag-grid GridOptions instead of binding in the template since;
                         - some are not exposed to Angular, so have to mix anyway
                         - typing and intellisense is much better in Typescript compared to the template
     */
 
-    
+
     @Input()
     public set inputParameters(parameters: ViewInputParameters) {
         this.viewId = parameters.viewId;
         this.timeSeries = filterOutTemplateSeries(parameters.timeSeries);
     }
     private viewId: number;
-    private timeSeries: Array<TimeSeriesIdentifier>;
+    private timeSeries: Array<TimeSeriesIdentifier> = [];
 
     public columnDefs: Array<ColumnDefinition>;
     public gridOptions: GridOptions;
@@ -87,11 +87,11 @@ export class TableDataComponent implements OnInit, OnDestroy {
     private pasteBuffer: Array<CellValueChangedEvent>;
 
 
-    constructor(private mainLayoutEntityService: MainLayoutEntityService,  
+    constructor(private mainLayoutEntityService: MainLayoutEntityService,
                 private timeSeriesEntityService: TimeSeriesEntityService,
-                private filterEntityService: FilterEntityService) { 
+                private filterEntityService: FilterEntityService) {
 
-        // in order for this to work property name and valus must match                    
+        // in order for this to work property name and valus must match
         this.columnTags = {
             nameColumnTag: 'nameColumnTag',
             seriesTypeTag: 'seriesTypeTag',
@@ -99,6 +99,7 @@ export class TableDataComponent implements OnInit, OnDestroy {
             scenarioColumnTag: 'scenarioColumnTag'
         };
     }
+
 
     public ngOnInit() {
 
@@ -112,13 +113,14 @@ export class TableDataComponent implements OnInit, OnDestroy {
 
     // when values changes on series included in this table, or when the definitions regarding which series should be included in table changes
     private createTrackSeriesChangedSubscription() {
-        
+
         return combineLatest([this.gridReady$, this.mainLayoutEntityService.entities$, this.timeSeriesEntityService.entities$]).pipe(
             filter(([_, i, series]) => series.length > 0),
             map(([_, i, series]) => {
 
                 const p = [...this.timeSeries];
                 const n = getSeriesInView(this.viewId, i[0]);
+
                 this.timeSeries = getSeriesInView(this.viewId, i[0]);
 
                 return {
@@ -132,7 +134,8 @@ export class TableDataComponent implements OnInit, OnDestroy {
             changedSeriesForViewOperator(this.viewId, this.previousPayloadDates),
         ).subscribe(({ addedOrUpdated, removed }: { addedOrUpdated: Array<TimeSeriesWithData<number>>, removed: Array<TimeSeriesIdentifier> }) => {
 
-            if (addedOrUpdated.length > 0) {
+
+          if (addedOrUpdated.length > 0) {
 
                 if (!this.columnDefs) this.columnDefs = this.createColumnDefs(addedOrUpdated);
                 this.addOrUpdateSeries(addedOrUpdated);
@@ -186,9 +189,9 @@ export class TableDataComponent implements OnInit, OnDestroy {
     }
 
     private pasteEnd() {
-        
+
         this.inPasteOperation = false;
-        
+
         const events = [...this.pasteBuffer];
         this.pasteBuffer = new Array<CellValueChangedEvent>();
 
@@ -245,10 +248,10 @@ export class TableDataComponent implements OnInit, OnDestroy {
     }
 
     private getTimeSeriesAtRow = (rowIndex: number): TimeSeriesIdentifier => {
-        
+
         const match = this.rowIndexForTimeSeries.find(i => i[0] === rowIndex);
         return match ? match[2] : undefined
-    }   
+    }
 
     private addOrUpdateSeries = (timeSeries: Array<TimeSeriesWithData<number>>) => {
 
@@ -287,7 +290,7 @@ export class TableDataComponent implements OnInit, OnDestroy {
                 return { nameColumnTag, seriesTypeTag, caseColumnTag, scenarioColumnTag };
 
             }).filter(i => !!i);
-            
+
             if (remove.length > 0) this.gridApi.applyTransaction({ remove });
 
             this.removeFromRowIndexForTimeSeries(removedSeries);
@@ -302,17 +305,17 @@ export class TableDataComponent implements OnInit, OnDestroy {
             this.rowIndexForTimeSeries = this.rowIndexForTimeSeries ?? [];
             const startIndex = this.rowIndexForTimeSeries.length;
 
-            series.map((i, index) => { 
+            series.map((i, index) => {
                 this.rowIndexForTimeSeries.push([startIndex + index, this.createTableRowId(i), createTimeSeriesIdentifier(i, this.timeSeries)])
             });
         }
 
-        // TOOD; for now the order requested by the user is not taken into account. 
+        // TOOD; for now the order requested by the user is not taken into account.
         return series.map(s => this.createRowDataForSeries(s));
     }
 
     private createRowDataForSeries = (series: TimeSeriesWithData<number>) => {
-        
+
         const scalingFactor = getScalingFactor({identifier: series}, this.timeSeries) ?? 1;
         const rowData: RowData = {};
         const [nameTag, seriesTypeTag, caseTag, scenarioTag] = this.createTableRowTags(series);
@@ -347,19 +350,19 @@ export class TableDataComponent implements OnInit, OnDestroy {
     }
 
     private removeFromRowIndexForTimeSeries = (removed: Array<TimeSeriesIdentifier>) => {
-        
+
         const findIndex = (i: TimeSeriesIdentifier) => this.rowIndexForTimeSeries.findIndex(j => TimeSeriesUtil.sameSeries(i, j[2]));
         this.removeFromList(removed, this.rowIndexForTimeSeries, findIndex);
     }
 
     private removeFromPayloadDates = (removed: Array<TimeSeriesIdentifier>) => {
-        
+
         const findIndex = (i: TimeSeriesIdentifier) => this.previousPayloadDates.findIndex(j => TimeSeriesUtil.sameSeries(i, j[0]));
         this.removeFromList(removed, this.previousPayloadDates, findIndex);
     }
 
     private removeFromList = (removed: Array<TimeSeriesIdentifier>, list: Array<any>, findIndex: (i: TimeSeriesIdentifier) => number) => {
-        
+
         removed.forEach(i => {
             const index = findIndex(i);
             if (index >= 0) list.splice(index, 1);

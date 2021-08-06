@@ -6,10 +6,10 @@
     </a>
     <p class="version">version 0.0.5</p>
   </nav>
-  
+
 </div>
 
 <div class="main">
-  <router-outlet></router-outlet>
+  <router-outlet (activate)='routeActived($event)'></router-outlet>
 </div>
 

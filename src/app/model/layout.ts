@@ -4,9 +4,9 @@ export interface MainLayout {
     name: string;
     content: Array<ContentPresenter>;
 
-    // the last date when data was recived from the api. Used internaly to differentiate when 
+    // the last date when data was recived from the api. Used internaly to differentiate when
     // the ngrx store was updated by internal processes and external data from the api
-    payloadDate: number;        
+    payloadDate: number;
 }
 
 export interface ContentPresenter {
@@ -30,7 +30,6 @@ export type mainPresenters =  'table' | 'chart' | 'multicontent' | 'box' | 'grid
 export class MainLayoutUtils {
 
     public static findFirstFromLayout = (layout: MainLayout, match: (i: ContentPresenter) => boolean): ContentPresenter => {
-        
-        return undefined; //   MainLayoutUtils.findFirstFromContent(layout.content, match, undefined);
+        return layout.content[0];
     }
 }

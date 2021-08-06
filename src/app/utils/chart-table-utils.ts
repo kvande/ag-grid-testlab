@@ -45,7 +45,7 @@ export const getDisplayAttributes = (series: TimeSeries, all: Array<TimeSeriesId
 }
 
 export const getDisplayName = (series: TimeSeries, all: Array<TimeSeriesIdentifier>, includeCaseId: boolean = false, includeScenarioId: boolean = false): string => {
-    
+
     return getDisplayAttributes(series, all, includeCaseId, includeScenarioId).displayName;
 }
 
@@ -83,7 +83,7 @@ export const changedSeriesForViewOperator = (viewId: number, previousPayloadDate
 
     return source$ => source$.pipe(
         map((i: SeriesUpdate) => {
-            
+
             const addedOrUpdated = new Array<TimeSeriesWithData<number>>();
             const seriesForView: Array<TimeSeriesWithData<number>> = i.series.filter(j => j.viewId === viewId)
                                           .map(i => i.timeSeries)
@@ -95,12 +95,15 @@ export const changedSeriesForViewOperator = (viewId: number, previousPayloadDate
 
                 const series = seriesForView.find(j => TimeSeriesUtil.sameSeries(addedSeries, j));
 
+
+
+
                 if (series) {
-                    
+
                     const index = previousPayloadDates.findIndex(([ts, _]) => TimeSeriesUtil.sameSeries(ts, series));
 
                     if (index >= 0) {
-    
+
                         if (previousPayloadDates[index][1] < series.payloadDate) {
                             previousPayloadDates[index][1] = series.payloadDate;
                             addedOrUpdated.push(series);
@@ -131,7 +134,7 @@ export const filterForIncludedSeriesOperator = (getSeriesInView: () => Array<Tim
 // (ak 02.03.2021) the api will allways return the entire set of series
 // so if user change one series, the api will return all series, instead of the delta. Must therefore update those series
 // it they already exists (do not change any attritbutes, just update the series values)
-export const updateExisting = (newSeries: Array<TimeSeriesWithData<number>>, 
+export const updateExisting = (newSeries: Array<TimeSeriesWithData<number>>,
                                existingSeries: Array<{identifier: TimeSeriesIdentifier, data: Array<[number, number]>}>,
                                timeSeriesAttributes: Array<TimeSeriesIdentifier & { scalingFactor?: number}>): Array<TimeSeriesIdentifier> => {
 
@@ -158,14 +161,14 @@ export const excludeSeries = <T extends TimeSeriesIdentifier>(all: Array<T>, exc
     const hasItems = (s: Array<any>) => (s?.length ?? 0) > 0;
 
     if (!hasItems(all) || !hasItems(exclude)) return all;
-    
+
     const copy = all.slice();
 
     exclude.forEach(i => {
-        
+
         const index = copy.findIndex(j => TimeSeriesUtil.sameSeries(j, i));
         if (index >= 0) copy.splice(index);
-    }); 
+    });
 
     return copy;
 }
@@ -193,7 +196,7 @@ export const getScalingFactor = (seriesId: {identifier: TimeSeriesIdentifier}, a
     return getPropertyForSeries<{scalingFactor?: number}>(seriesId, all, v  => v?.scalingFactor ?? 1) ?? 1;
 }
 
-const getPropertyForSeries = <T>(seriesId: {identifier: TimeSeriesIdentifier}, all: Array<TimeSeriesIdentifier>, 
+const getPropertyForSeries = <T>(seriesId: {identifier: TimeSeriesIdentifier}, all: Array<TimeSeriesIdentifier>,
                                     getAttribute: (v: TimeSeriesIdentifier & T) => any, defaultValue: any = undefined) => {
 
     if (!seriesId || (all?.length ?? 0) <= 0) return defaultValue;
@@ -212,7 +215,7 @@ export const getSeriesInView = (viewId: number, layout: MainLayout): Array<TimeS
 }
 
 export const getAddedSeries = (previous: Array<TimeSeriesIdentifier>, next: Array<TimeSeriesIdentifier>, includeTemplateSeries: boolean = false): Array<TimeSeriesIdentifier> => {
-    
+
     const tryFindTemplateSeries = (i: TimeSeriesIdentifier, n: Array<TimeSeriesIdentifier>) => !n.find(j => TimeSeriesUtil.sameTemplateSeries(i, j));
     const tryFindSeries = (i: TimeSeriesIdentifier, n: Array<TimeSeriesIdentifier>) => !n.find(j => TimeSeriesUtil.sameSeries(i, j));
 
@@ -235,14 +238,14 @@ export const getUpdateSeries = (previous: Array<TimeSeriesIdentifier>, next: Arr
     return getChangesInSeriesSet(next, previous, tryFindTemplateSeries, tryFindSeries, includeTemplateSeries);
 }
 
-const getChangesInSeriesSet = (first: Array<TimeSeriesIdentifier>, second: Array<TimeSeriesIdentifier>, 
-                                checkTemplateSeries: (i: TimeSeriesIdentifier, n: Array<TimeSeriesIdentifier>) => boolean,                             
-                                 checkSeries: (i: TimeSeriesIdentifier, n: Array<TimeSeriesIdentifier>) => boolean, 
+const getChangesInSeriesSet = (first: Array<TimeSeriesIdentifier>, second: Array<TimeSeriesIdentifier>,
+                                checkTemplateSeries: (i: TimeSeriesIdentifier, n: Array<TimeSeriesIdentifier>) => boolean,
+                                 checkSeries: (i: TimeSeriesIdentifier, n: Array<TimeSeriesIdentifier>) => boolean,
                                   includeTemplateSeries: boolean = false): Array<TimeSeriesIdentifier> => {
-    
+
     const series = new Array<TimeSeriesIdentifier>();
     const n = second?.slice() ?? [];
-    
+
     (first ?? []).forEach(i => {
 
         const isTemplatedSeries = isTemplateSeries(i);
@@ -254,7 +257,7 @@ const getChangesInSeriesSet = (first: Array<TimeSeriesIdentifier>, second: Array
             series.push(i);
         }
     })
-    
+
     return series;
 }
 
@@ -265,4 +268,4 @@ export const filterOutTemplateSeries = (series: Array<TimeSeriesIdentifier>): Ar
             : [];
 }
 
-const isTemplateSeries = (series: TimeSeriesIdentifier) => series.modelTemplateIdentifier || series.urlTemplateIdentifier; 
+const isTemplateSeries = (series: TimeSeriesIdentifier) => series.modelTemplateIdentifier || series.urlTemplateIdentifier;

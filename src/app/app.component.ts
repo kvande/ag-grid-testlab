@@ -28,14 +28,16 @@ export class AppComponent {
         timeSeries: []
     }
 
-    public naigateToRoute = (event: any) => {
+    public routeActived = (event: any) => {
 
-        // this.router.navigate()
+        // nice trick!
 
-
-
+        // todo, chekc if correct type to run this
+        event.inputParameters = this.inputParameters;
 
     }
+
+
 
 
 }
