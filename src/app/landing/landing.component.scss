@@ -1,0 +1,45 @@
+.wrapper {
+    display: grid;
+    height: 200px;
+    grid-template-areas: "A B";
+    grid-template-columns: repeat(3, 400px);
+    grid-template-rows: auto;
+    margin: 3rem;
+    gap: 2rem;
+}
+
+a {
+    text-decoration: none;
+    color: rgb(34, 34, 34);
+}
+
+h3 {
+    font-size: 1.1rem;
+    font-weight: 100;
+}
+
+p {
+    padding: 0;
+}
+
+.card {
+    width: 100%;
+    height: 250px;
+    box-shadow: inset 0 -3em 3em rgba(0,0,0,0.1),
+    0 0  0 2px rgb(255,255,255),
+    0.3em 0.3em 1em rgba(0,0,0,0.3);
+
+    h3, p {
+        padding: 1rem;
+    }
+}
+
+.table-data {
+    grid-area: A;
+
+    
+}
+
+.read-only-data {
+    grid-area: B;
+}

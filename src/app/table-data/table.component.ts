@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import {  combineLatest, Subject, Subscription } from 'rxjs';
-import { filter, map, tap } from 'rxjs/operators';
+import { filter, map, tap, throwIfEmpty } from 'rxjs/operators';
 import { TimeSeriesIdentifier, TimeSeriesUtil, TimeSeriesWithData, ComponentType, ViewWithTimeSeries } from '../time-series';
 import fromUnixTime from 'date-fns/fromUnixTime';
 import { CellValueChangedEvent, ColumnApi, GridApi, GridOptions } from 'ag-grid-community';
@@ -57,9 +57,19 @@ export class TableComponent implements OnInit {
     private previousPayloadDates = new Array<[TimeSeriesIdentifier, number]>();
     
 
-    constructor(private timeSeriesEntityService: TimeSeriesEntityService) {}
+    constructor(private timeSeriesEntityService: TimeSeriesEntityService) {
+
+        // add some required defaul
+        this.inputParameters =  {
+            viewId: 1,
+            style: '',
+            title: ''
+        };
+
+    }
 
     public ngOnInit() {
+
 
         this.gridOptions = this.initGridOptions();
 

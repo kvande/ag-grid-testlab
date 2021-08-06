@@ -1,14 +1,15 @@
 <div class="wrapper">
 
   <nav class="nav-bar">
-    <p>AG Grid tester</p>
+    <a [routerLink]="['/']">
+      <p>AG Grid tester</p>
+    </a>
     <p class="version">version 0.0.5</p>
   </nav>
-
-  <section class="main">
-    <p>Purpose is to test a variety of functionality in AG Grid Angular</p>
-    <app-table [inputParameters]="inputParameters"></app-table>
-
-  </section>
-
+  
 </div>
+
+<div class="main">
+  <router-outlet></router-outlet>
+</div>
+
