@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { TimeSeriesIdentifier } from './time-series';
+import { TimeSeriesIdentifier } from './model/timeseries';
 
 
 

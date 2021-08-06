@@ -1,5 +1,5 @@
 
-import { ColumnTags } from './table-data.component';
+import { ColumnTags } from './table-read-only.component';
 
 
 export const getRowNodeId = (data: ColumnTags): string => {

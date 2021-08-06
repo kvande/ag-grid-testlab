@@ -1,10 +1,9 @@
 import { interval, Observable } from "rxjs";
-import { TimeSeriesWithData } from "../model/timeseries";
+import { TimeSeriesWithData, ViewWithTimeSeries } from "../model/timeseries";
 import { addHours } from 'date-fns';
 import { map, take } from "rxjs/operators";
-import { ViewWithTimeSeries } from "../services/time-series-entity/time-series-data.service";
 
-export const tableData$ = (): Observable<Array<ViewWithTimeSeries>> => {
+export const tableData$ = ():  Observable<Array<ViewWithTimeSeries>> => {
 
     return interval(100).pipe(
         take(12),
@@ -35,13 +34,10 @@ const createTs = (name: string, firstValue: number): TimeSeriesWithData<number> 
     });
 
     return {
-        modelIdentifier: {
-            attributeId: '1',
-            componentId: 1,
-            componentType: 1,
-            hpsId: 1,
-            modelKey: 'key'
-        },
+        attributeId: name,
+        componentId: 1,
+        componentType: 1,
+        hpsId: 1,
         data,
         id: 1,
         payloadDate: Date.now(),

@@ -21,6 +21,7 @@
     "@angular/router": "~12.2.0",
     "ag-grid-angular": "^25.3.0",
     "ag-grid-community": "^25.1.0",
+    "@ag-grid-enterprise/all-modules": "^25.1.0",
     "date-fns": "^2.23.0",
     "rxjs": "^7.3.0",
     "tslib": "^2.0.0",

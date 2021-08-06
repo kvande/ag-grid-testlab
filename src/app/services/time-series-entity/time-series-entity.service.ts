@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { TimeSeriesWithData, ViewWithTimeSeries } from '../time-series';
-import { tableData$ } from '../table-data/table-data';
+import { tableData$ } from '../../table-data/table-data';
+import { ViewWithTimeSeries } from './time-series-data.service';
 
 @Injectable({
     providedIn: 'root'
