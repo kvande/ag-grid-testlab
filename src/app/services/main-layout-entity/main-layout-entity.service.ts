@@ -1,25 +1,22 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { ContentPresenterWithSeries } from '../api-converters/time-series/request/dstm-series-request-converter';
-import { MainLayout } from '../model/layout';
-import { TimeSeriesIdentifier } from '../model/timeseries';
+import { ContentPresenterWithSeries } from '../../api-converters/time-series/request/dstm-series-request-converter';
+import { MainLayout } from '../../model/layout';
+import { TimeSeriesIdentifier } from '../../model/timeseries';
 
 const createTestData = (): MainLayout => {
 
     const timeSeries: Array<TimeSeriesIdentifier> = [...Array(20).keys()].map(i => {
 
-      i = i + 1;
-
       return ({
-        modelIdentifier: { modelKey: `${i}`,
+        modelIdentifier: { modelKey: `${++i}`,
                           attributeId: `${i}`,
                           componentId: i,
                           componentType: i,
-                          hpsId: i
+                          hpsId: i,
                         },
-        displayAttributes: { displayName: `${i}`,
-                             objectName: `${i}`,
-                             case: '1'
+        displayAttributes: { displayName: `Series ${i}`,
+                             objectName: `Series ${i}`,
                           }
     })});
 

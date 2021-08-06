@@ -1,18 +1,22 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
-import { combineLatest, Observable, Subject, Subscription } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
-import { TimeSeriesIdentifier, TimeSeriesUtil, TimeSeriesWithData, TimeSeries } from '../model/timeseries';
+
+import { Component, OnInit, Input, OnDestroy } from '@angular/core';
 import fromUnixTime from 'date-fns/fromUnixTime';
-import { CellValueChangedEvent, ColumnApi, GridApi, GridOptions } from 'ag-grid-community';
+import { TimeSeries, TimeSeriesIdentifier, TimeSeriesUtil, TimeSeriesWithData } from '../model/timeseries';
 import { AllModules } from '@ag-grid-enterprise/all-modules';
+import { ViewInputParameters } from '../model/view-input';
+import { TimeSeriesEntityService } from '../services/time-series-entity/time-series-entity.service';
+import { combineLatest, Observable, Subject, Subscription } from 'rxjs';
+import { createTimeSeriesIdentifier, getScalingFactor, createDataSeries, getSeriesInView, getDisplayAttributes,
+         getRemovedSeries, getCaseAndScenarioId, filterOutTemplateSeries, getAddedSeries, getUpdateSeries,
+         changedSeriesForViewOperator, SeriesUpdate } from '../utils/chart-table-utils';
+import { filter, map } from 'rxjs/operators';
+import { CellValueChangedEvent, ColumnApi, GridApi, GridOptions } from 'ag-grid-community';
 import { cellFocused, cellsValueChanged, getWithNextSorting } from './table-events';
 import { getRowNodeId } from './table-callbacks';
-import { changedSeriesForViewOperator, createDataSeries, createTimeSeriesIdentifier, filterOutTemplateSeries, getAddedSeries, getCaseAndScenarioId, getDisplayAttributes, getRemovedSeries, getScalingFactor, getSeriesInView, getUpdateSeries, SeriesUpdate } from '../utils/chart-table-utils';
-import { TimeSeriesEntityService } from '../services/time-series-entity/time-series-entity.service';
-import { ViewInputParameters } from '../app.component';
-import { TableTooltipComponent, TooltipData } from '../table-tooltip/table-tooltip.component';
-import { MainLayoutEntityService } from '../services/mainlayout-entity.service';
-import { FilterEntityService, FilterSet } from '../services/filter-entity.service';
+import { MainLayoutEntityService } from '../services/main-layout-entity/main-layout-entity.service';
+import { FilterEntityService } from '../services/filter-entity/filter-entity.service';
+import { FilterSet } from '../model/filter';
+import { TableTooltipComponent, TooltipData } from './table-tooltip/table-tooltip.component';
 
 
 export interface ColumnTags {
@@ -37,18 +41,17 @@ interface ColumnDefinition {
     valueParser?: (i: any) => any;
     pinned?: 'left' | 'right';
     tooltipField?: string;
-    // customTooltip?: string;
     tooltipComponentParams?: {};
 }
 
 @Component({
-    selector: 'app-table-read-only',
+    selector: 'app-table',
     templateUrl: './table-read-only.component.html',
     styleUrls: ['./table-read-only.component.scss'],
 })
 export class TableReadOnlyComponent implements OnInit, OnDestroy {
 
-    /*      
+    /*
         ak 04.03.2021: Motivation, only using ag-grid GridOptions instead of binding in the template since;
                         - some are not exposed to Angular, so have to mix anyway
                         - typing and intellisense is much better in Typescript compared to the template
@@ -61,7 +64,7 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
         this.timeSeries = filterOutTemplateSeries(parameters.timeSeries);
     }
     private viewId: number;
-    private timeSeries: Array<TimeSeriesIdentifier>;
+    private timeSeries: Array<TimeSeriesIdentifier> = [];
 
     public columnDefs: Array<ColumnDefinition>;
     public gridOptions: GridOptions;
@@ -87,10 +90,10 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
 
 
     constructor(private mainLayoutEntityService: MainLayoutEntityService,
-        private timeSeriesEntityService: TimeSeriesEntityService,
-        private filterEntityService: FilterEntityService) {
+                private timeSeriesEntityService: TimeSeriesEntityService,
+                private filterEntityService: FilterEntityService) {
 
-        // in order for this to work property name and valus must match                    
+        // in order for this to work property name and valus must match
         this.columnTags = {
             nameColumnTag: 'nameColumnTag',
             seriesTypeTag: 'seriesTypeTag',
@@ -123,7 +126,7 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
                 return {
                     addedSeries: getAddedSeries(p, n),
                     removedSeries: getRemovedSeries(p, n),
-                    updatedSeries: getUpdateSeries(p, n),
+                    updatedSeries: getUpdateSeries(p,n),
                     series
                 } as SeriesUpdate;
 
@@ -153,7 +156,7 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
             onCellFocused: cellFocused,
             getRowNodeId: (i: ColumnTags) => getRowNodeId(i),
             onCellValueChanged: i => this.cellValueChanged(i),
-            onSortChanged: i => { this.rowIndexForTimeSeries = getWithNextSorting(i, this.rowIndexForTimeSeries) },
+            onSortChanged: i => { this.rowIndexForTimeSeries = getWithNextSorting(i, this.rowIndexForTimeSeries)},
             onPasteStart: _ => { this.pasteStart() },
             onPasteEnd: _ => { this.pasteEnd() },
             onGridReady: ({ api, columnApi }) => {
@@ -199,8 +202,7 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
         const common: {
             editable: boolean;
             sortable: boolean;
-            pinned: 'left' | 'right'
-        } = { editable: false, pinned: 'left', sortable: true };
+            pinned: 'left' | 'right' } = { editable: false, pinned: 'left', sortable: true };
 
 
         const nameColumn: ColumnDefinition = {
@@ -208,7 +210,7 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
             field: this.columnTags.nameColumnTag,
             tooltipField: this.columnTags.nameColumnTag,
             width: 120,
-            tooltipComponentParams: { getTimeSeriesAtRow: this.getTimeSeriesAtRow } as TooltipData,
+            tooltipComponentParams: { getTimeSeriesAtRow: this.getTimeSeriesAtRow  } as TooltipData,
             ...common,
         };
         const seriesTypeColumn: ColumnDefinition = {
@@ -307,13 +309,13 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
             });
         }
 
-        // TOOD; for now the order requested by the user is not taken into account. 
+        // TOOD; for now the order requested by the user is not taken into account.
         return series.map(s => this.createRowDataForSeries(s));
     }
 
     private createRowDataForSeries = (series: TimeSeriesWithData<number>) => {
 
-        const scalingFactor = getScalingFactor({ identifier: series }, this.timeSeries) ?? 1;
+        const scalingFactor = getScalingFactor({identifier: series}, this.timeSeries) ?? 1;
         const rowData: RowData = {};
         const [nameTag, seriesTypeTag, caseTag, scenarioTag] = this.createTableRowTags(series);
 
@@ -389,5 +391,3 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
         return hour === 0 ? `${convert(date.getDate())}-${convert(date.getMonth() + 1)}` : `${hour}:00`;
     }
 }
-
-

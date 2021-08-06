@@ -1,19 +1,22 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
-import { combineLatest, Observable, Subject, Subscription } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
-import { TimeSeriesIdentifier, TimeSeriesUtil, TimeSeriesWithData, TimeSeries } from '../model/timeseries';
+
+import { Component, OnInit, Input, OnDestroy } from '@angular/core';
 import fromUnixTime from 'date-fns/fromUnixTime';
-import { CellValueChangedEvent, ColumnApi, GridApi, GridOptions } from 'ag-grid-community';
+import { TimeSeries, TimeSeriesIdentifier, TimeSeriesUtil, TimeSeriesWithData } from '../model/timeseries';
 import { AllModules } from '@ag-grid-enterprise/all-modules';
+import { ViewInputParameters } from '../model/view-input';
+import { TimeSeriesEntityService } from '../services/time-series-entity/time-series-entity.service';
+import { combineLatest, Observable, Subject, Subscription } from 'rxjs';
+import { createTimeSeriesIdentifier, getScalingFactor, createDataSeries, getSeriesInView, getDisplayAttributes,
+         getRemovedSeries, getCaseAndScenarioId, filterOutTemplateSeries, getAddedSeries, getUpdateSeries,
+         changedSeriesForViewOperator, SeriesUpdate } from '../utils/chart-table-utils';
+import { filter, map } from 'rxjs/operators';
+import { CellValueChangedEvent, ColumnApi, GridApi, GridOptions } from 'ag-grid-community';
 import { cellFocused, cellsValueChanged, getWithNextSorting } from './table-events';
 import { getRowNodeId } from './table-callbacks';
-import { changedSeriesForViewOperator, createDataSeries, createTimeSeriesIdentifier, filterOutTemplateSeries, getAddedSeries, getCaseAndScenarioId, getDisplayAttributes, getRemovedSeries, getScalingFactor, getSeriesInView, getUpdateSeries, SeriesUpdate } from '../utils/chart-table-utils';
-import { TimeSeriesEntityService } from '../services/time-series-entity/time-series-entity.service';
-import { ViewInputParameters } from '../app.component';
-import { TableTooltipComponent, TooltipData } from '../table-tooltip/table-tooltip.component';
-import { MainLayoutEntityService } from '../services/mainlayout-entity.service';
-import { FilterEntityService, FilterSet } from '../services/filter-entity.service';
-
+import { MainLayoutEntityService } from '../services/main-layout-entity/main-layout-entity.service';
+import { FilterEntityService } from '../services/filter-entity/filter-entity.service';
+import { FilterSet } from '../model/filter';
+import { TableTooltipComponent, TooltipData } from './table-tooltip/table-tooltip.component';
 
 
 export interface ColumnTags {
@@ -38,7 +41,6 @@ interface ColumnDefinition {
     valueParser?: (i: any) => any;
     pinned?: 'left' | 'right';
     tooltipField?: string;
-    // customTooltip?: string;
     tooltipComponentParams?: {};
 }
 
@@ -100,7 +102,6 @@ export class TableDataComponent implements OnInit, OnDestroy {
         };
     }
 
-
     public ngOnInit() {
 
         this.gridOptions = this.initGridOptions();
@@ -120,7 +121,6 @@ export class TableDataComponent implements OnInit, OnDestroy {
 
                 const p = [...this.timeSeries];
                 const n = getSeriesInView(this.viewId, i[0]);
-
                 this.timeSeries = getSeriesInView(this.viewId, i[0]);
 
                 return {
@@ -134,8 +134,7 @@ export class TableDataComponent implements OnInit, OnDestroy {
             changedSeriesForViewOperator(this.viewId, this.previousPayloadDates),
         ).subscribe(({ addedOrUpdated, removed }: { addedOrUpdated: Array<TimeSeriesWithData<number>>, removed: Array<TimeSeriesIdentifier> }) => {
 
-
-          if (addedOrUpdated.length > 0) {
+            if (addedOrUpdated.length > 0) {
 
                 if (!this.columnDefs) this.columnDefs = this.createColumnDefs(addedOrUpdated);
                 this.addOrUpdateSeries(addedOrUpdated);
@@ -392,5 +391,3 @@ export class TableDataComponent implements OnInit, OnDestroy {
         return hour === 0 ? `${convert(date.getDate())}-${convert(date.getMonth() + 1)}` : `${hour}:00`;
     }
 }
-
-

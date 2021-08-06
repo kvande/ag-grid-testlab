@@ -10,7 +10,7 @@ export const cellFocused = (event: CellFocusedEvent) => {
 
 // returns a new array, taking the new order into consideration
 export const getWithNextSorting = (event: SortChangedEvent, rowIndexForTimeSeries: Array<[rowIndex: number, rowId: string, seriesId: TimeSeriesIdentifier]>) => {
-    
+
     const rows = (event.api as any)?.rowModel.rowsToDisplay as Array<RowNode>;
     const updated = new Array<[rowIndex: number, rowId: string, seriesId: TimeSeriesIdentifier]>();
 
@@ -39,7 +39,7 @@ export const cellsValueChanged = (events: Array<CellValueChangedEvent>, viewId: 
 
         // might happen if just tabbing in and out of cells
         if (event.newValue !== event.oldValue) {
-            
+
             const match = rowIndexForTimeSeries?.find(i => i[0] === event.rowIndex);
 
             const { modelIdentifier = undefined, urlIdentifier = undefined, source = TimeSeriesSource.undefined } = match ? match[2] : {};
@@ -86,7 +86,7 @@ const addSeries = (series: Array<TimeSeriesWithData<number>>, timeSeriesId: Time
 
 const sortSeriesAccordingToDate = (series: Array<TimeSeriesWithData<number>>) => {
 
-    series.forEach(s => { 
+    series.forEach(s => {
         s.data?.sort(([t1, v1], [t2, v2]) => t1 > t2 ? 1 : -1);
     });
 
