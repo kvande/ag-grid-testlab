@@ -4,9 +4,9 @@ import { addHours } from 'date-fns';
 import { map, take } from "rxjs/operators";
 import { ViewWithTimeSeries } from "./services/time-series-entity/time-series-data.service";
 
-export const tableData$ = (): Observable<Array<ViewWithTimeSeries>> => {
+export const tableData$ = (intervalMilliseconds: number = 1): Observable<Array<ViewWithTimeSeries>> => {
 
-    return interval(100).pipe(
+    return interval(intervalMilliseconds).pipe(
         take(12),
         map(j => {
 

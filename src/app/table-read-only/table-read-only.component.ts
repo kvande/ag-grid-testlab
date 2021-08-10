@@ -1,16 +1,16 @@
 
 import { Component, OnInit, Input, OnDestroy } from '@angular/core';
 import fromUnixTime from 'date-fns/fromUnixTime';
-import { TimeSeries, TimeSeriesIdentifier, TimeSeriesUtil, TimeSeriesWithData } from '../model/timeseries';
+import { TimeSeries, TimeSeriesIdentifier, TimeSeriesUtil, TimeSeriesVisualization, TimeSeriesWithData } from '../model/timeseries';
 import { AllModules } from '@ag-grid-enterprise/all-modules';
 import { ViewInputParameters } from '../model/view-input';
 import { TimeSeriesEntityService } from '../services/time-series-entity/time-series-entity.service';
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs';
 import { createTimeSeriesIdentifier, getScalingFactor, createDataSeries, getSeriesInView, getDisplayAttributes,
          getRemovedSeries, getCaseAndScenarioId, filterOutTemplateSeries, getAddedSeries, getUpdateSeries,
-         changedSeriesForViewOperator, SeriesUpdate } from '../utils/chart-table-utils';
+         changedSeriesForViewOperator, SeriesUpdate, getSeriesIsReadOnly, findSeries } from '../utils/chart-table-utils';
 import { filter, map } from 'rxjs/operators';
-import { CellValueChangedEvent, ColumnApi, GridApi, GridOptions } from 'ag-grid-community';
+import { CellValueChangedEvent, ColumnApi, GridApi, GridOptions, RowNode } from 'ag-grid-community';
 import { cellFocused, cellsValueChanged, getWithNextSorting } from './table-events';
 import { getRowNodeId } from './table-callbacks';
 import { MainLayoutEntityService } from '../services/main-layout-entity/main-layout-entity.service';
@@ -36,18 +36,19 @@ interface ColumnDefinition {
     headerName: string;
     field: string;      // ag grid use this internal when creating the grid data object, for now use unix date from colomn 1 and onwards for easier look ups later
     width?: number;
-    editable: boolean;
+    editable: (i: { node: RowNode }) => boolean;
     date?: number;       // unix date
     valueParser?: (i: any) => any;
     pinned?: 'left' | 'right';
     tooltipField?: string;
     tooltipComponentParams?: {};
+    cellStyle?: {};
 }
 
 @Component({
-    selector: 'app-table',
-    templateUrl: './table-read-only.component.html',
-    styleUrls: ['./table-read-only.component.scss'],
+  selector: 'app-table',
+  templateUrl: './table-read-only.component.html',
+  styleUrls: ['./table-read-only.component.scss'],
 })
 export class TableReadOnlyComponent implements OnInit, OnDestroy {
 
@@ -200,9 +201,9 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
     private createColumnDefs = (series: Array<TimeSeriesWithData<number>>): Array<ColumnDefinition> => {
 
         const common: {
-            editable: boolean;
+            editable: (i: { node: RowNode }) => boolean;
             sortable: boolean;
-            pinned: 'left' | 'right' } = { editable: false, pinned: 'left', sortable: true };
+            pinned: 'left' | 'right' } = { editable: () => false, pinned: 'left', sortable: true };
 
 
         const nameColumn: ColumnDefinition = {
@@ -210,7 +211,7 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
             field: this.columnTags.nameColumnTag,
             tooltipField: this.columnTags.nameColumnTag,
             width: 120,
-            tooltipComponentParams: { getTimeSeriesAtRow: this.getTimeSeriesAtRow  } as TooltipData,
+            tooltipComponentParams: { getTimeSeriesAtRow: this.getTimeSeriesWithVisualizationParametersAtRow  } as TooltipData,
             ...common,
         };
         const seriesTypeColumn: ColumnDefinition = {
@@ -224,6 +225,7 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
             field: this.columnTags.caseColumnTag,
             width: 65,
             ...common,
+
         };
         const scenarioColumn: ColumnDefinition = {
             headerName: "Scenario",
@@ -233,13 +235,17 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
         };
 
         const timeSteps: Array<ColumnDefinition> = Array.from(series[0].data).map(([dateUnix, _]) => {
-            return ({
+
+          const readOnly = (i: RowNode) => getSeriesIsReadOnly({identifier: this.getTimeSeriesAtRow(i.rowIndex)}, this.timeSeries);
+
+          return ({
                 headerName: this.dateToString(dateUnix),
                 field: `${dateUnix}`,
                 width: 75,
                 date: dateUnix,
-                editable: true,
-                valueParser: (i) => this.numberParser(i)
+                editable: (i: { node: RowNode }) => !readOnly(i.node),
+                valueParser: i => this.numberParser(i),
+                cellStyle: (i: { node: RowNode }) => this.getCellStyle(readOnly(i.node))
             });
         });
 
@@ -250,6 +256,18 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
 
         const match = this.rowIndexForTimeSeries.find(i => i[0] === rowIndex);
         return match ? match[2] : undefined
+    }
+
+    private getTimeSeriesWithVisualizationParametersAtRow = (rowIndew: number): TimeSeriesIdentifier & TimeSeriesVisualization => {
+
+        let match = this.getTimeSeriesAtRow(rowIndew);
+
+        if (match) {
+            const s = findSeries({identifier: match}, this.timeSeries) as TimeSeriesVisualization;
+            return s ? {...match, scalingFactor: s.scalingFactor, readOnly: s.readOnly} : match;
+        }
+
+        return match;
     }
 
     private addOrUpdateSeries = (timeSeries: Array<TimeSeriesWithData<number>>) => {
@@ -390,4 +408,8 @@ export class TableReadOnlyComponent implements OnInit, OnDestroy {
 
         return hour === 0 ? `${convert(date.getDate())}-${convert(date.getMonth() + 1)}` : `${hour}:00`;
     }
+
+    // add more as needed to this
+    private getCellStyle = (readOnly: boolean) =>  readOnly ? {color: 'blue'} : {}
+
 }

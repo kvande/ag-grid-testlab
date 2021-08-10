@@ -1,7 +1,7 @@
 import { map } from 'rxjs/operators';
 import { ContentPresenterWithSeries } from '../api-converters/time-series/request/dstm-series-request-converter';
 import { MainLayout, MainLayoutUtils } from '../model/layout';
-import { TimeSeriesWithData, TimeSeriesUtil, TimeSeriesIdentifier, TimeSeries } from '../model/timeseries';
+import { TimeSeriesWithData, TimeSeriesUtil, TimeSeriesIdentifier, TimeSeries, TimeSeriesVisualization } from '../model/timeseries';
 import { ViewWithTimeSeries } from '../services/time-series-entity/time-series-data.service';
 
 
@@ -12,6 +12,10 @@ export interface SeriesUpdate {
     series: Array<ViewWithTimeSeries>;
 }
 
+
+export const findSeries = (seriesId: {identifier: TimeSeriesIdentifier}, all: Array<TimeSeriesIdentifier>) => {
+    return all.find(i => TimeSeriesUtil.sameSeries(seriesId.identifier, i));
+}
 
 export const getRequestedSeries = (all: Array<TimeSeriesWithData<number>>, requested: Array<TimeSeriesIdentifier>): Array<TimeSeriesWithData<number>> => {
 
@@ -28,7 +32,7 @@ export const getRequestedSeries = (all: Array<TimeSeriesWithData<number>>, reque
     return seriesForThis;
 }
 
-export const getDisplayAttributes = (series: TimeSeries, all: Array<TimeSeriesIdentifier>, includeCaseId: boolean = false, includeScenarioId: boolean = false) => {
+export const getDisplayAttributes = (series: TimeSeriesIdentifier, all: Array<TimeSeriesIdentifier>, includeCaseId: boolean = false, includeScenarioId: boolean = false) => {
 
     const match = all?.find(i => isSameSeriesNeglectingCaseAndScenarioId(i, series));
     const caseId = includeCaseId ? series?.modelIdentifier?.caseId ?? undefined : undefined;
@@ -94,9 +98,6 @@ export const changedSeriesForViewOperator = (viewId: number, previousPayloadDate
             addedOrUpdatedSeries.forEach(addedSeries => {
 
                 const series = seriesForView.find(j => TimeSeriesUtil.sameSeries(addedSeries, j));
-
-
-
 
                 if (series) {
 
@@ -196,12 +197,17 @@ export const getScalingFactor = (seriesId: {identifier: TimeSeriesIdentifier}, a
     return getPropertyForSeries<{scalingFactor?: number}>(seriesId, all, v  => v?.scalingFactor ?? 1) ?? 1;
 }
 
+export const getSeriesIsReadOnly = (seriesId: {identifier: TimeSeriesIdentifier}, all: Array<TimeSeriesIdentifier & { readOnly?: number}>) => {
+
+    return getPropertyForSeries<{readOnly?: number}>(seriesId, all, v  => v?.readOnly ?? false) ?? false;
+}
+
 const getPropertyForSeries = <T>(seriesId: {identifier: TimeSeriesIdentifier}, all: Array<TimeSeriesIdentifier>,
                                     getAttribute: (v: TimeSeriesIdentifier & T) => any, defaultValue: any = undefined) => {
 
     if (!seriesId || (all?.length ?? 0) <= 0) return defaultValue;
 
-    const match = all.find(i => TimeSeriesUtil.sameSeries(seriesId.identifier, i));
+    const match = findSeries(seriesId, all);
 
     return match ? getAttribute(match as any) : defaultValue;
 }

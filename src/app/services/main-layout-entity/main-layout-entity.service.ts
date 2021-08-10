@@ -2,11 +2,11 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { ContentPresenterWithSeries } from '../../api-converters/time-series/request/dstm-series-request-converter';
 import { MainLayout } from '../../model/layout';
-import { TimeSeriesIdentifier } from '../../model/timeseries';
+import { TimeSeriesIdentifier, TimeSeriesVisualization } from '../../model/timeseries';
 
 const createTestData = (): MainLayout => {
 
-    const timeSeries: Array<TimeSeriesIdentifier> = [...Array(20).keys()].map(i => {
+    const timeSeries: Array<TimeSeriesIdentifier & TimeSeriesVisualization> = [...Array(20).keys()].map(i => {
 
       return ({
         modelIdentifier: { modelKey: `${++i}`,
@@ -17,7 +17,9 @@ const createTestData = (): MainLayout => {
                         },
         displayAttributes: { displayName: `Series ${i}`,
                              objectName: `Series ${i}`,
-                          }
+                             seriesType: 'some atr',
+                          },
+                          readOnly: i % 2 === 0
     })});
 
     return {

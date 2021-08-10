@@ -2,7 +2,12 @@
 
 ## How to update from 'source'
 
-It should be possible to copy the content of this files directly:
+
+# Remarks: It there is any custom code in some of the components it will be erased with the copy pasting below, so try to only copy paste 'new test cases'
+  
+
+
+It should be possible to copy the content from the 'official' to these files directly (have to update them all, otherwise there will be build problems):
 
 ..?/../table-callbacks.ts
 ..?/../table-events.ts
